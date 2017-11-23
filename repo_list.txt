@@ -1,0 +1,4 @@
+https://github.com/sign5/Android-Gradle-Examples
+https://github.com/sign5/android-maven-example
+https://github.com/sign5/todo-api
+https://github.com/sign5/todo-web
