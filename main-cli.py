@@ -45,13 +45,27 @@ def read_xml(file_name):
     return res
 
 
+def get_job_names(dirs):
+    res = []
+    for repository in dirs:
+        res.append(repository[repository.rfind('/') + 1::])
+    return res
+
+
+def contains(jobs, repo_name):
+    for job in jobs:
+        if job['fullname'] == repo_name:
+            return True
+    return False
+
+
 print('*****************')
 print('Jenkins Automator')
 print('*****************')
 file_name = 'repo_list.txt'
 if len(sys.argv) > 1:
     file_name = sys.argv[1]
-print('Using ' + file_name + ' as repo list source')
+print('Using ' + file_name + ' as repo list source\n')
 f = open(file_name)
 line = f.readline().strip()
 repo_list = []
@@ -63,16 +77,28 @@ while line:
         repo_list.append(line)
 f.close()
 dirs = create_dirs(repo_list)
+job_names = get_job_names(dirs)
 edit_xml(repo_list)
 
 server = jenkins.Jenkins('http://localhost:8080', 'sgn', 'toor')
 
 print('Number of jobs before adding: ' + str(server.jobs_count()))
 print('Number of jobs to add: ' + str(len(dirs)))
+jobs = server.get_jobs()
 
 for repository in dirs:
     job_name = repository[repository.rfind('/') + 1::]
-    configure_xml = read_xml(repository + '/config.xml')
-    server.create_job(job_name, configure_xml)
+    # if contains(jobs, job_name):
+    if server.job_exists(job_name):
+        print('Repo with name ' + job_name + ' already added')
+    else:
+        configure_xml = read_xml(repository + '/config.xml')
+        server.create_job(job_name, configure_xml)
 
-print('Number of jobs after adding: ' + str(server.jobs_count()))
+print('Number of jobs after adding: ' + str(server.jobs_count()) + '\n')
+
+print('Starting building jobs')
+for job_name in job_names:
+    print('Building ' + job_name)
+    server.build_job(job_name)
+print('Now wait for building jobs')
